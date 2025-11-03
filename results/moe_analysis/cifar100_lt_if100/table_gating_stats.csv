@@ -1,0 +1,11 @@
+Metric,Value
+Mean Weight Entropy,1.0759060382843018
+Mean Effective Experts,2.8725266456604004
+Load Balance Std,0.07545849680900574
+Mean Weight (ce_baseline),0.26078975200653076
+Mean Weight (logitadjust_baseline),0.41140294075012207
+Mean Weight (balsoftmax_baseline),0.32780739665031433
+Group 0 Mean Entropy,1.0755914449691772
+Group 0 Mean Effective Experts,2.8714051246643066
+Group 1 Mean Entropy,1.0766061544418335
+Group 1 Mean Effective Experts,2.875023126602173

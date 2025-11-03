@@ -1,0 +1,4 @@
+# Appendix n
+
+F.6, we show on CIFAR-100 that the heuristic we employ in our plug-in approach to pick the group coverage α (§4.2) performs comparable to an exhaustive grid search over α. 7 CONCLUSION We have shown that standard L2R can be sub-optimal for general evaluation metrics, and proposed simple plug-in methods that yield signiﬁcantly better trade-offs for both the balanced and worst-group error. Our methods require only a pre-trained model optimized with the CE loss, and are competitive with complex loss modiﬁcation approaches. In the future, it is of interest to explore joint training of the classiﬁer and rejector using surrogate losses (Cao et al., 2022), and extensions to hierarchical classiﬁcation (Wu et al., 2020b) and pairwise ranking (Shen et al., 2020; Mao et al., 2023b). 9
+Published as a conference paper at ICLR 2024

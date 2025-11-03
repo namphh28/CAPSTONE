@@ -1,0 +1,16 @@
+# Using python 3.11 with conda
+torch 
+torchvision 
+torchaudio
+numpy 
+pandas 
+scikit-learn
+hydra-core 
+omegaconf
+matplotlib 
+tqdm 
+rich
+einops
+pytest
+pytest-mock
+tqdm
