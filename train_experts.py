@@ -231,27 +231,27 @@ def main():
         print(f"{'='*80}\n")
     
     try:
-    print("=" * 60)
-    print("AR-GSE EXPERT TRAINING")
-    print("=" * 60)
-    
-    # Determine split usage
-    use_expert_split = not args.use_full_train
-    if use_expert_split:
-        print("📊 Training Mode: Using EXPERT split (90% of train)")
-        print("   - Trains on 9,719 samples (expert split)")
-        print("   - Validates on 1,000 samples (balanced val)")
-        print("   - Uses reweighted metrics for validation")
-    else:
-        print("📊 Training Mode: Using FULL train set")
-        print("   - Trains on 10,847 samples (full train)")
-        print("   - Validates on 1,000 samples (balanced val)")
-        print("   - Uses reweighted metrics for validation")
-    print()
-    
-    # Setup environment
-    setup_training_environment(args)
-    
+        print("=" * 60)
+        print("AR-GSE EXPERT TRAINING")
+        print("=" * 60)
+        
+        # Determine split usage
+        use_expert_split = not args.use_full_train
+        if use_expert_split:
+            print("📊 Training Mode: Using EXPERT split (90% of train)")
+            print("   - Trains on 9,719 samples (expert split)")
+            print("   - Validates on 1,000 samples (balanced val)")
+            print("   - Uses reweighted metrics for validation")
+        else:
+            print("📊 Training Mode: Using FULL train set")
+            print("   - Trains on 10,847 samples (full train)")
+            print("   - Validates on 1,000 samples (balanced val)")
+            print("   - Uses reweighted metrics for validation")
+        print()
+        
+        # Setup environment
+        setup_training_environment(args)
+        
         from src.train.train_expert import EXPERT_CONFIGS
         
         # Determine which experts to train
@@ -318,7 +318,7 @@ def main():
             print("\n❌ No experts were trained successfully")
             print("Please check the errors above and resolve any issues")
             sys.exit(1)
-            
+        
         if args.log_file:
             print(f"\n{'='*80}")
             print(f"COMPLETED AT: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
