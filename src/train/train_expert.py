@@ -172,29 +172,29 @@ def get_dataloaders(use_expert_split=True, dataset_name=None, override_batch_siz
         dataset_name = CONFIG["dataset"]["name"]
     
     if dataset_name == "cifar100_lt_if100":
-    print("Loading CIFAR-100-LT datasets...")
+        print("Loading CIFAR-100-LT datasets...")
 
-    if use_expert_split:
-        print("  Using EXPERT split (90% of train) for training")
-    else:
-        print("  Using FULL train split for training")
+        if use_expert_split:
+            print("  Using EXPERT split (90% of train) for training")
+        else:
+            print("  Using FULL train split for training")
 
         batch_size = override_batch_size if override_batch_size is not None else CONFIG["train_params"]["batch_size"]
-    train_loader, val_loader = get_expert_training_dataloaders(
+        train_loader, val_loader = get_expert_training_dataloaders(
             batch_size=batch_size,
-        num_workers=4,
-        use_expert_split=use_expert_split,
-        splits_dir=CONFIG["dataset"]["splits_dir"],
-    )
+            num_workers=4,
+            use_expert_split=use_expert_split,
+            splits_dir=CONFIG["dataset"]["splits_dir"],
+        )
 
-    print(
-        f"  Train loader: {len(train_loader)} batches ({len(train_loader.dataset):,} samples)"
-    )
-    print(
-        f"  Val loader: {len(val_loader)} batches ({len(val_loader.dataset):,} samples)"
-    )
+        print(
+            f"  Train loader: {len(train_loader)} batches ({len(train_loader.dataset):,} samples)"
+        )
+        print(
+            f"  Val loader: {len(val_loader)} batches ({len(val_loader.dataset):,} samples)"
+        )
 
-    return train_loader, val_loader
+        return train_loader, val_loader
     
     elif dataset_name == "inaturalist2018":
         print("Loading iNaturalist 2018 datasets...")
@@ -394,30 +394,23 @@ def load_class_to_group(splits_dir, threshold=20):
 
 def validate_model(model, val_loader, device, class_weights=None, class_to_group=None):
     """
-    Validate model with reweighted metrics.
+    Validate model without reweighting.
 
     Args:
         model: Model to validate
         val_loader: Validation dataloader (balanced val split)
         device: Device to use
-        class_weights: Class weights for reweighting (from training distribution)
+        class_weights: Ignored (kept for compatibility, but not used)
         class_to_group: Array mapping class -> group (0=head, 1=tail)
 
     Returns:
         overall_acc: Overall accuracy (unweighted, on balanced val)
-        reweighted_acc: Reweighted accuracy (simulates long-tail performance)
+        reweighted_acc: Same as overall_acc (no reweighting)
         group_accs: Group-wise accuracies
     """
     model.eval()
     correct = 0
     total = 0
-
-    # Get number of classes from CONFIG
-    num_classes = CONFIG["dataset"]["num_classes"]
-
-    # For reweighted accuracy
-    class_correct = np.zeros(num_classes)
-    class_total = np.zeros(num_classes)
 
     group_correct = {"head": 0, "tail": 0}
     group_total = {"head": 0, "tail": 0}
@@ -435,39 +428,20 @@ def validate_model(model, val_loader, device, class_weights=None, class_to_group
             total += targets.size(0)
             correct += (predicted == targets).sum().item()
 
-            # Per-class accuracy for reweighting
+            # Group-wise accuracy using class_to_group mapping
             for i, target in enumerate(targets):
                 target_class = target.item()
                 pred = predicted[i].item()
 
-                class_total[target_class] += 1
-                if pred == target_class:
-                    class_correct[target_class] += 1
-
-                # Group-wise accuracy using class_to_group mapping
                 group_id = class_to_group[target_class]
                 group_name = "head" if group_id == 0 else "tail"
                 group_total[group_name] += 1
-                    if pred == target_class:
+                if pred == target_class:
                     group_correct[group_name] += 1
 
     # Standard accuracy (on balanced val set)
     overall_acc = 100 * correct / total
-
-    # Reweighted accuracy (simulates long-tail performance)
-    if class_weights is not None:
-        # Per-class accuracy
-        class_acc = np.zeros(num_classes)
-        for i in range(num_classes):
-            if class_total[i] > 0:
-                class_acc[i] = class_correct[i] / class_total[i]
-            else:
-                class_acc[i] = 0.0
-
-        # Reweighted accuracy using training distribution weights
-        reweighted_acc = 100 * np.sum(class_acc * class_weights)
-    else:
-        reweighted_acc = overall_acc
+    reweighted_acc = overall_acc  # No reweighting, same as overall
 
     # Group-wise accuracies
     group_accs = {}
@@ -521,13 +495,13 @@ def export_logits_for_all_splits(model, expert_name):
             from src.data.enhanced_datasets import get_cifar100_transforms
             _, eval_transform = get_cifar100_transforms()
 
-        # Load appropriate base dataset
+            # Load appropriate base dataset
             if split_name in ["train", "expert", "gating"]:
-            base_dataset = torchvision.datasets.CIFAR100(
+                base_dataset = torchvision.datasets.CIFAR100(
                     root=CONFIG["dataset"]["data_root"], train=True, transform=None
-            )
-        else:
-            base_dataset = torchvision.datasets.CIFAR100(
+                )
+            else:
+                base_dataset = torchvision.datasets.CIFAR100(
                     root=CONFIG["dataset"]["data_root"], train=False, transform=None
                 )
             
@@ -663,8 +637,8 @@ def train_single_expert(expert_key, use_expert_split=True, override_epochs=None,
             raise ValueError(f"Expert '{expert_key}' not found in EXPERT_CONFIGS_INATURALIST")
         expert_configs = EXPERT_CONFIGS_INATURALIST
     else:
-    if expert_key not in EXPERT_CONFIGS:
-        raise ValueError(f"Expert '{expert_key}' not found in EXPERT_CONFIGS")
+        if expert_key not in EXPERT_CONFIGS:
+            raise ValueError(f"Expert '{expert_key}' not found in EXPERT_CONFIGS")
         expert_configs = EXPERT_CONFIGS
     
     expert_config = expert_configs[expert_key].copy()  # Make a copy to avoid modifying original
@@ -753,9 +727,7 @@ def train_single_expert(expert_key, use_expert_split=True, override_epochs=None,
             f"[INFO] Using MultiStepLR scheduler (milestones={expert_config['milestones']}, gamma={expert_config['gamma']})"
         )
 
-    # Load class weights for group-wise metrics
-    class_weights = load_class_weights(CONFIG["dataset"]["splits_dir"])
-    print("[SUCCESS] Loaded class weights for validation")
+    # Note: Class weights removed - no reweighting during training/validation
 
     # Training setup
     best_val_acc = 0.0
@@ -806,7 +778,7 @@ def train_single_expert(expert_key, use_expert_split=True, override_epochs=None,
 
         # Validate model
         val_acc, _, group_accs = validate_model(
-            model, val_loader, DEVICE, class_weights=class_weights
+            model, val_loader, DEVICE, class_weights=None
         )
 
         # Get current LR
@@ -848,7 +820,7 @@ def train_single_expert(expert_key, use_expert_split=True, override_epochs=None,
 
     # Final validation
     final_acc, _, final_group_accs = validate_model(
-        model, val_loader, DEVICE, class_weights=class_weights
+        model, val_loader, DEVICE, class_weights=None
     )
     print("📊 Final Results:")
     print(f"   Overall Acc: {final_acc:.2f}% (on balanced val)")
